@@ -11,19 +11,20 @@
     "seed:admin": "node scripts/seed-admin.js",
     "seed:demo": "node scripts/seed-demo-data.js",
     "migrate:images": "node scripts/migrate-upload-images.js",
+    "repair:canteen": "node scripts/repair-canteen-meals.js",
     "test": "npx playwright test"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ShazminaOudeen/SmartMess.git"
+    "url": "git+https://github.com/Shrihankittu1110/Smart_campus_system.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/ShazminaOudeen/SmartMess/issues"
+    "url": "https://github.com/Shrihankittu1110/Smart_campus_system/issues"
   },
-  "homepage": "https://github.com/ShazminaOudeen/SmartMess#readme",
+  "homepage": "https://github.com/Shrihankittu1110/Smart_campus_system#readme",
   "devDependencies": {
     "@playwright/test": "^1.62.1",
     "@types/node": "^25.3.3"
