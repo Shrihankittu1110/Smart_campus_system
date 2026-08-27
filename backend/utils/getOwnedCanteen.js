@@ -1,26 +1,28 @@
 const mongoose = require('mongoose');
 const Canteen = require('../models/Canteen');
 
-const asObjectId = (id) => (
-  mongoose.Types.ObjectId.isValid(id) ? new mongoose.Types.ObjectId(id) : id
-);
-
 const getOwnedCanteen = async (user) => {
   if (!user?._id) return null;
 
-  const ownerId = asObjectId(user._id);
-  let canteen = await Canteen.findOne({ owner: ownerId });
-  if (canteen) return canteen;
-
+  const ownerId = user._id;
+  const ownerObjectId = mongoose.Types.ObjectId.isValid(ownerId)
+    ? new mongoose.Types.ObjectId(ownerId)
+    : ownerId;
+  const ownerString = ownerId.toString();
   const email = user.email?.toLowerCase().trim();
-  if (!email) return null;
+  const canteenName = user.canteenName?.trim();
 
-  canteen = await Canteen.findOne({ email });
+  const filters = [{ owner: ownerObjectId }, { owner: ownerString }];
+  if (email) filters.push({ email });
+  if (canteenName) filters.push({ canteenName }, { name: canteenName });
+
+  const canteen = await Canteen.findOne({ $or: filters });
   if (!canteen) return null;
 
-  if (!canteen.owner || canteen.owner.toString() !== ownerId.toString()) {
-    canteen.owner = ownerId;
+  if (!canteen.owner || canteen.owner.toString() !== ownerString) {
+    canteen.owner = ownerObjectId;
     if (!canteen.ownerName && user.name) canteen.ownerName = user.name;
+    if (!canteen.email && email) canteen.email = email;
     await canteen.save();
   }
 
