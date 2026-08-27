@@ -2,6 +2,7 @@
 
 const mongoose = require('mongoose');
 const Meal     = require('../../models/Meal');
+const getOwnedCanteen = require('../../utils/getOwnedCanteen');
 
 const getOrders = () => mongoose.connection.db.collection('orders');
 const mealCanteenFilter = (canteenId) => ({
@@ -10,9 +11,7 @@ const mealCanteenFilter = (canteenId) => ({
 
 const getDashboard = async (req, res) => {
   try {
-    const canteen = await mongoose.connection.db.collection('canteens').findOne({
-      owner: new mongoose.Types.ObjectId(req.user._id),
-    });
+    const canteen = await getOwnedCanteen(req.user);
 
     if (!canteen) {
       return res.status(404).json({ success: false, message: 'Canteen not found for this user' });

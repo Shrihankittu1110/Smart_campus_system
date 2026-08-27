@@ -1,18 +1,17 @@
 // backend/Canteen/controllers/reviewController.js
 const mongoose = require('mongoose');
 const Rating = require('../../models/Rating');
+const getOwnedCanteen = require('../../utils/getOwnedCanteen');
 
-const getCanteenId = async (userId) => {
-  const canteen = await mongoose.connection.db.collection('canteens').findOne({
-    owner: new mongoose.Types.ObjectId(userId),
-  });
+const getCanteenId = async (user) => {
+  const canteen = await getOwnedCanteen(user);
   return canteen?._id || null;
 };
 
 // GET /api/canteen/reviews
 const getReviews = async (req, res) => {
   try {
-    const canteenId = await getCanteenId(req.user._id);
+    const canteenId = await getCanteenId(req.user);
     if (!canteenId) return res.status(404).json({ success: false, message: 'Canteen not found' });
 
     const reviews = await Rating.find({ canteen: canteenId })

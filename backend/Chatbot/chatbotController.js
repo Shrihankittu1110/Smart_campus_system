@@ -5,6 +5,7 @@ const Meal = require('../models/Meal');
 const Order = require('../models/Order');
 const Complaint = require('../Admin/models/Complaint');
 const ActivityLog = require('../Admin/models/ActivityLog');
+const getOwnedCanteen = require('../utils/getOwnedCanteen');
 
 let groq = null;
 
@@ -64,7 +65,7 @@ ${recentActivity.map(a => `- [${new Date(a.createdAt).toLocaleString()}] ${a.typ
   }
 
   if (role === 'canteen') {
-    const canteen = await Canteen.findOne({ owner: user._id });
+    const canteen = await getOwnedCanteen(user);
     if (!canteen) return `Canteen profile not found for user ${user.name}.`;
 
     const [meals, recentOrders, reviews] = await Promise.all([

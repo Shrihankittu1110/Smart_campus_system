@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const multer   = require('multer');
 const path     = require('path');
 const fs       = require('fs');
+const getOwnedCanteen = require('../../utils/getOwnedCanteen');
 
 const getCollection = (name) => mongoose.connection.db.collection(name);
 
@@ -19,9 +20,7 @@ const upload = multer({ storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024
 // ── GET /api/canteen/profile ──────────────────────────────────────────────────
 const getCanteenProfile = async (req, res) => {
   try {
-    const canteen = await getCollection('canteens').findOne({
-      owner: new mongoose.Types.ObjectId(req.user._id),
-    });
+    const canteen = await getOwnedCanteen(req.user);
     if (!canteen) return res.status(404).json({ success: false, message: 'Canteen not found' });
     res.json({ success: true, data: canteen });
   } catch (err) {
@@ -88,8 +87,11 @@ const updateCanteenProfile = async (req, res) => {
   updateData.image = `data:${req.file.mimetype};base64,${base64}`;
 }
 
+    const canteen = await getOwnedCanteen(req.user);
+    if (!canteen) return res.status(404).json({ success: false, message: 'Canteen not found' });
+
     const result = await getCollection('canteens').findOneAndUpdate(
-      { owner: new mongoose.Types.ObjectId(req.user._id) },
+      { _id: canteen._id },
       { $set: updateData },
       { returnDocument: 'after' }
     );
@@ -105,10 +107,7 @@ const updateCanteenProfile = async (req, res) => {
 // ── GET /api/canteen/hours ────────────────────────────────────────────────────
 const getOperatingHours = async (req, res) => {
   try {
-    const canteen = await getCollection('canteens').findOne(
-      { owner: new mongoose.Types.ObjectId(req.user._id) },
-      { projection: { operatingHours: 1 } }
-    );
+    const canteen = await getOwnedCanteen(req.user);
 
     let hours = canteen?.operatingHours || [];
 
@@ -142,8 +141,11 @@ const updateOperatingHours = async (req, res) => {
       }
     }
 
+    const canteen = await getOwnedCanteen(req.user);
+    if (!canteen) return res.status(404).json({ success: false, message: 'Canteen not found' });
+
     await getCollection('canteens').updateOne(
-      { owner: new mongoose.Types.ObjectId(req.user._id) },
+      { _id: canteen._id },
       { $set: { operatingHours: hours, updatedAt: new Date() } }
     );
 

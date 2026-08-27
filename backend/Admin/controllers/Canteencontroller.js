@@ -223,7 +223,9 @@ const approveCanteen = async (req, res) => {
     );
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
-    const existing = await Canteen.findOne({ owner: user._id });
+    const existing = await Canteen.findOne({
+      $or: [{ owner: user._id }, { email: user.email }],
+    });
 
     if (!existing) {
       await Canteen.create({
@@ -240,8 +242,12 @@ const approveCanteen = async (req, res) => {
       });
     } else {
       await Canteen.findOneAndUpdate(
-        { owner: user._id },
+        { _id: existing._id },
         {
+          owner:                user._id,
+          ownerName:            existing.ownerName || user.name,
+          name:                 existing.name || user.canteenName,
+          canteenName:          existing.canteenName || user.canteenName,
           isApproved:           true,
           isActive:             true,
           email:                existing.email || user.email,

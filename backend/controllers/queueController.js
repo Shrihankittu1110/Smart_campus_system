@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const QueueToken = require('../models/QueueToken');
 const Canteen = require('../models/Canteen');
+const getOwnedCanteen = require('../utils/getOwnedCanteen');
 
 const AVG_SERVICE_MINUTES = 5;
 
@@ -17,8 +18,6 @@ const endOfToday = () => {
 };
 
 const todayFilter = () => ({ $gte: startOfToday(), $lte: endOfToday() });
-
-const getOwnedCanteen = async (userId) => Canteen.findOne({ owner: userId });
 
 const buildQueueStatus = async (canteenId, studentId = null) => {
   const waitingTokens = await QueueToken.find({
@@ -135,7 +134,7 @@ const getMyToken = async (req, res) => {
 
 const getStaffQueue = async (req, res) => {
   try {
-    const canteen = await getOwnedCanteen(req.user._id);
+    const canteen = await getOwnedCanteen(req.user);
     if (!canteen) return res.status(404).json({ success: false, message: 'Canteen not found' });
 
     const status = await buildQueueStatus(canteen._id);
@@ -147,7 +146,7 @@ const getStaffQueue = async (req, res) => {
 
 const completeToken = async (req, res) => {
   try {
-    const canteen = await getOwnedCanteen(req.user._id);
+    const canteen = await getOwnedCanteen(req.user);
     if (!canteen) return res.status(404).json({ success: false, message: 'Canteen not found' });
 
     const token = await QueueToken.findOneAndUpdate(

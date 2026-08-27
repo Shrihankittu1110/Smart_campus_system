@@ -1,21 +1,20 @@
 //backend/Canteen/controllers/revenueController.js
 
 const mongoose = require('mongoose');
+const getOwnedCanteen = require('../../utils/getOwnedCanteen');
 
 const getOrders = () => mongoose.connection.db.collection('orders');
 
 // ── Helper: get canteen _id from logged-in user ───────────────────────────────
-const getCanteenId = async (userId) => {
-  const canteen = await mongoose.connection.db.collection('canteens').findOne({
-    owner: new mongoose.Types.ObjectId(userId),
-  });
+const getCanteenId = async (user) => {
+  const canteen = await getOwnedCanteen(user);
   return canteen?._id || null;
 };
 
 // ── GET /api/canteen/revenue?year=2026&month=3 ────────────────────────────────
 const getRevenue = async (req, res) => {
   try {
-    const canteenId = await getCanteenId(req.user._id);
+    const canteenId = await getCanteenId(req.user);
     if (!canteenId) return res.status(404).json({ success: false, message: 'Canteen not found' });
 
     const year  = parseInt(req.query.year)  || new Date().getFullYear();

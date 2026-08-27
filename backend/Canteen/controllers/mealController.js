@@ -2,11 +2,10 @@
 const mongoose = require('mongoose');
 const multer   = require('multer');
 const Meal     = require('../../models/Meal');
+const getOwnedCanteen = require('../../utils/getOwnedCanteen');
 
-const getCanteenId = async (userId) => {
-  const canteen = await mongoose.connection.db.collection('canteens').findOne({
-    owner: new mongoose.Types.ObjectId(userId),
-  });
+const getCanteenId = async (user) => {
+  const canteen = await getOwnedCanteen(user);
   return canteen?._id || null;
 };
 
@@ -77,7 +76,7 @@ const validateMealBody = (body) => {
 // ── GET /api/canteen/meals ────────────────────────────────────────────────────
 const getMeals = async (req, res) => {
   try {
-    const canteenId = await getCanteenId(req.user._id);
+    const canteenId = await getCanteenId(req.user);
     if (!canteenId)
       return res.status(404).json({ success: false, message: 'Canteen not found' });
 
@@ -91,7 +90,7 @@ const getMeals = async (req, res) => {
 // ── POST /api/canteen/meals ───────────────────────────────────────────────────
 const addMeal = async (req, res) => {
   try {
-    const canteenId = await getCanteenId(req.user._id);
+    const canteenId = await getCanteenId(req.user);
     if (!canteenId)
       return res.status(404).json({ success: false, message: 'Canteen not found' });
 

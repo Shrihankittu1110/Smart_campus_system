@@ -2,12 +2,11 @@
 
 const mongoose   = require('mongoose');
 const nodemailer = require('nodemailer');
+const getOwnedCanteen = require('../../utils/getOwnedCanteen');
 
 // ── Helper: get canteen _id from logged-in user ───────────────────────────────
-const getCanteenId = async (userId) => {
-  const canteen = await mongoose.connection.db.collection('canteens').findOne({
-    owner: new mongoose.Types.ObjectId(userId),
-  });
+const getCanteenId = async (user) => {
+  const canteen = await getOwnedCanteen(user);
   return canteen?._id || null;
 };
 
@@ -86,7 +85,7 @@ const getCollection = () => mongoose.connection.db.collection('orders');
 // ── GET /api/canteen/orders ───────────────────────────────────────────────────
 const getOrders = async (req, res) => {
   try {
-    const canteenId = await getCanteenId(req.user._id);
+    const canteenId = await getCanteenId(req.user);
     if (!canteenId) return res.status(404).json({ success: false, message: 'Canteen not found' });
 
     const orders = await getCollection()
