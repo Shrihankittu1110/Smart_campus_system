@@ -10,6 +10,7 @@
     "build": "npm run build --prefix frontend",
     "seed:admin": "node scripts/seed-admin.js",
     "seed:demo": "node scripts/seed-demo-data.js",
+    "migrate:images": "node scripts/migrate-upload-images.js",
     "test": "npx playwright test"
   },
   "repository": {

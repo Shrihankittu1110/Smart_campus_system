@@ -7,8 +7,8 @@ const User = require('../backend/Auth/models/User');
 
 const ADMIN = {
   name: 'System Admin',
-  email: 'felix@gmail.com',
-  password: 'Shazmina2005',
+  email: 'kittu@gmail.com',
+  password: 'kittuadmin',
   role: 'admin',
   phone: '0700000001',
   nic: 'ADMIN-DEMO',
