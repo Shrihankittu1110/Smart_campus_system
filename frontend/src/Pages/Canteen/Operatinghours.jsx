@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Clock, Save, CheckCircle, XCircle, Loader2, ToggleLeft, ToggleRight } from 'lucide-react';
+import { apiUrl } from '../../utils/apiUrl';
 
 const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
 
@@ -49,7 +50,7 @@ export default function OperatingHours() {
     const fetchHours = async () => {
       setLoading(true);
       try {
-        const r = await fetch('/api/canteen/hours', {
+        const r = await fetch(apiUrl('/api/canteen/hours'), {
           headers: { Authorization: `Bearer ${token}` },
         });
         const j = await r.json();
@@ -82,7 +83,7 @@ export default function OperatingHours() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const r = await fetch('/api/canteen/hours', {
+      const r = await fetch(apiUrl('/api/canteen/hours'), {
         method:  'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body:    JSON.stringify({ hours }),

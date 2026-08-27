@@ -6,6 +6,7 @@ import {
   Upload, X, Send, CheckCircle, Phone, Mail,
   MessageSquare, Clock, Shield, Loader2
 } from 'lucide-react';
+import { apiUrl } from '../../utils/apiUrl';
 
 const CATEGORIES = [
   { key: 'Bug Issue',       icon: Bug,          color: 'text-red-500',    bg: 'bg-red-50 dark:bg-red-900/20',    border: 'border-red-200 dark:border-red-800/40',    ring: 'ring-red-400'    },
@@ -63,7 +64,7 @@ export default function ReportIssuePage() {
       fd.append('description',      form.description);
       if (image) fd.append('attachment', image);
 
-      const r = await fetch('/api/canteen/report', {
+      const r = await fetch(apiUrl('/api/canteen/report'), {
         method:  'POST',
         headers: { Authorization: `Bearer ${token}` },
         body:    fd,

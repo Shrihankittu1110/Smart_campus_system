@@ -3,12 +3,13 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { buildImgUrl } from '../../utils/imageUrl';
+import { apiUrl } from '../../utils/apiUrl';
 import {
   Store, MapPin, User, FileText, Camera, Save,
   CheckCircle, XCircle, Loader2, Upload, Trash2, Phone, Mail
 } from 'lucide-react';
 
-const API = '/api/canteen/profile';
+const API = apiUrl('/api/canteen/profile');
 
 // Validation helpers
 const validate = (form) => {

@@ -2,13 +2,14 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { apiUrl } from '../../utils/apiUrl';
 import {
   ShoppingBag, Clock, UtensilsCrossed, DollarSign,
   CheckCircle, XCircle, ChefHat, Package, Star,
   Plus, Eye, RefreshCw, Loader2, TrendingUp, Zap, TicketCheck
 } from 'lucide-react';
 
-const API = '/api/canteen/dashboard';
+const API = apiUrl('/api/canteen/dashboard');
 
 const STATUS_CONFIG = {
   pending:   { label: 'Pending',   color: 'bg-yellow-400', text: 'text-yellow-600 dark:text-yellow-400' },

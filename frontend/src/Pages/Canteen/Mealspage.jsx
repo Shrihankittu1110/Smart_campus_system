@@ -10,10 +10,11 @@ import {
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useTheme } from '../../context/ThemeContext';
+import { apiUrl } from '../../utils/apiUrl';
 
 const CATEGORIES = ['Rice', 'Snacks', 'Desserts', 'Drinks', 'Breakfast', 'Other'];
 const SIZES      = ['Small', 'Medium', 'Large'];
-const API        = '/api/canteen/meals';
+const API        = apiUrl('/api/canteen/meals');
 
 
 const makeEmptyForm = () => ({

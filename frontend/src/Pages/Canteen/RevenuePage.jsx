@@ -12,8 +12,9 @@ import {
 } from 'recharts';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { apiUrl } from '../../utils/apiUrl';
 
-const API = '/api/canteen/revenue';
+const API = apiUrl('/api/canteen/revenue');
 
 function Toast({ toast }) {
   if (!toast) return null;

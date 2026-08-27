@@ -4,8 +4,9 @@ import {
   Star, MessageSquare, Send, ChevronDown, Search,
   Loader2, CheckCircle, XCircle, User, X
 } from 'lucide-react';
+import { apiUrl } from '../../utils/apiUrl';
 
-const API = '/api/canteen/reviews';
+const API = apiUrl('/api/canteen/reviews');
 
 const FILTERS = ['All', '5 Stars', '4 Stars', '3 Stars', '2 Stars', '1 Star'];
 

@@ -6,8 +6,9 @@ import {
   Loader2, Search, Eye, X, ChevronDown,
   Mail, Phone, User, RefreshCw
 } from 'lucide-react';
+import { apiUrl } from '../../utils/apiUrl';
 
-const API = '/api/canteen/orders';
+const API = apiUrl('/api/canteen/orders');
 
 const STATUSES = ['pending', 'accepted', 'preparing', 'ready', 'completed', 'cancelled'];
 
