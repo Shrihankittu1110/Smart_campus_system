@@ -13,10 +13,9 @@ const app = express();
 const port = process.env.PORT || 5000;
 connectDB();
 
-const allowedOrigins = (process.env.CLIENT_URL || '')
-  .split(',')
-  .map((origin) => origin.trim())
-  .filter(Boolean);
+const allowedOrigins = [
+  'https://smart-campus-system-iota.vercel.app'
+];
 
 app.use(cors({
   origin: function(origin, callback) {
