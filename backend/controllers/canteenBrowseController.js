@@ -1,6 +1,7 @@
 const Canteen = require('../models/Canteen');
 const Meal = require('../models/Meal');
 const Order = require('../models/Order');
+const User = require('../Auth/models/User');
 
 const mealCanteenFilter = (canteenId) => ({
   $or: [{ canteen: canteenId }, { canteen: canteenId.toString() }],
@@ -9,7 +10,30 @@ const mealCanteenFilter = (canteenId) => ({
 // Get all approved canteens
 const getApprovedCanteens = async (req, res) => {
   try {
-    const canteens = await Canteen.find({ isApproved: true, isActive: true }).sort({ canteenName: 1 });
+    const approvedOwners = await User.find({
+      role: 'canteen',
+      status: 'approved',
+      isActive: { $ne: false },
+      isBlocked: { $ne: true },
+    }).select('_id email canteenName');
+
+    const approvedOwnerIds = approvedOwners.map((user) => user._id);
+    const approvedOwnerIdStrings = approvedOwnerIds.map((id) => id.toString());
+    const approvedEmails = approvedOwners.map((user) => user.email).filter(Boolean);
+    const approvedCanteenNames = approvedOwners.map((user) => user.canteenName).filter(Boolean);
+
+    const canteens = await Canteen.find({
+      isActive: { $ne: false },
+      $or: [
+        { isApproved: true },
+        { owner: { $in: approvedOwnerIds } },
+        { owner: { $in: approvedOwnerIdStrings } },
+        { email: { $in: approvedEmails } },
+        { canteenName: { $in: approvedCanteenNames } },
+        { name: { $in: approvedCanteenNames } },
+      ],
+    }).sort({ canteenName: 1 });
+
     const normalized = await Promise.all(canteens.map(async (c) => {
       const mealFilter = mealCanteenFilter(c._id);
       const [mealCount, availableMealCount] = await Promise.all([
