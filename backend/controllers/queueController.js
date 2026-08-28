@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const QueueToken = require('../models/QueueToken');
 const Canteen = require('../models/Canteen');
+const Order = require('../models/Order');
 const User = require('../Auth/models/User');
 const getOwnedCanteen = require('../utils/getOwnedCanteen');
 
@@ -79,6 +80,47 @@ const buildQueueStatus = async (canteenId, studentId = null) => {
   };
 };
 
+const createTokenForOrder = async ({ orderId, studentId, canteenId }) => {
+  const existingForOrder = orderId
+    ? await QueueToken.findOne({ order: orderId, status: 'waiting', createdAt: todayFilter() })
+    : null;
+
+  if (existingForOrder) {
+    return buildQueueStatus(canteenId, studentId);
+  }
+
+  const existingForStudent = await QueueToken.findOne({
+    canteen: canteenId,
+    student: studentId,
+    status: 'waiting',
+    createdAt: todayFilter(),
+  });
+
+  if (existingForStudent) {
+    if (orderId && !existingForStudent.order) {
+      existingForStudent.order = orderId;
+      await existingForStudent.save();
+    }
+    return buildQueueStatus(canteenId, studentId);
+  }
+
+  const todayCount = await QueueToken.countDocuments({
+    canteen: canteenId,
+    createdAt: todayFilter(),
+  });
+  const tokenNumber = todayCount + 1;
+
+  await QueueToken.create({
+    tokenNumber,
+    tokenCode: `Q-${String(tokenNumber).padStart(3, '0')}`,
+    student: studentId,
+    canteen: canteenId,
+    order: orderId || null,
+  });
+
+  return buildQueueStatus(canteenId, studentId);
+};
+
 const getStatus = async (req, res) => {
   try {
     const { canteenId } = req.query;
@@ -95,7 +137,36 @@ const getStatus = async (req, res) => {
 
 const createToken = async (req, res) => {
   try {
-    const { canteenId } = req.body;
+    const { orderId } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(orderId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Place an order before generating a queue token.',
+      });
+    }
+
+    const order = await Order.findOne({
+      _id: orderId,
+      student: req.user._id,
+      status: { $ne: 'cancelled' },
+    });
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'No eligible order found for this queue token.',
+      });
+    }
+
+    if (order.paymentStatus !== 'paid') {
+      return res.status(400).json({
+        success: false,
+        message: 'Payment must be completed before a queue token is generated.',
+      });
+    }
+
+    const canteenId = order.canteen;
     if (!mongoose.Types.ObjectId.isValid(canteenId)) {
       return res.status(400).json({ success: false, message: 'Valid canteenId is required' });
     }
@@ -105,36 +176,11 @@ const createToken = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Canteen is not available' });
     }
 
-    const existing = await QueueToken.findOne({
-      canteen: canteenId,
-      student: req.user._id,
-      status: 'waiting',
-      createdAt: todayFilter(),
+    const status = await createTokenForOrder({
+      orderId: order._id,
+      studentId: req.user._id,
+      canteenId,
     });
-
-    if (existing) {
-      const status = await buildQueueStatus(canteenId, req.user._id);
-      return res.json({
-        success: true,
-        message: 'You already have an active token for this canteen',
-        data: status,
-      });
-    }
-
-    const todayCount = await QueueToken.countDocuments({
-      canteen: canteenId,
-      createdAt: todayFilter(),
-    });
-    const tokenNumber = todayCount + 1;
-
-    await QueueToken.create({
-      tokenNumber,
-      tokenCode: `Q-${String(tokenNumber).padStart(3, '0')}`,
-      student: req.user._id,
-      canteen: canteenId,
-    });
-
-    const status = await buildQueueStatus(canteenId, req.user._id);
     res.status(201).json({ success: true, message: 'Queue token generated', data: status });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -149,6 +195,7 @@ const getMyToken = async (req, res) => {
       createdAt: todayFilter(),
     })
       .populate('canteen', 'canteenName name location')
+      .populate('order', '_id totalAmount status paymentStatus')
       .sort({ createdAt: -1 });
 
     if (!token) return res.json({ success: true, data: null });
@@ -198,4 +245,5 @@ module.exports = {
   getMyToken,
   getStaffQueue,
   completeToken,
+  createTokenForOrder,
 };

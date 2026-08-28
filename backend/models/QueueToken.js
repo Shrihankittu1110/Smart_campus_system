@@ -6,6 +6,7 @@ const queueTokenSchema = new mongoose.Schema(
     tokenCode: { type: String, required: true },
     student: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     canteen: { type: mongoose.Schema.Types.ObjectId, ref: 'Canteen', required: true },
+    order: { type: mongoose.Schema.Types.ObjectId, ref: 'Order', default: null },
     status: {
       type: String,
       enum: ['waiting', 'completed', 'cancelled'],
@@ -18,5 +19,6 @@ const queueTokenSchema = new mongoose.Schema(
 
 queueTokenSchema.index({ canteen: 1, createdAt: 1 });
 queueTokenSchema.index({ student: 1, canteen: 1, status: 1 });
+queueTokenSchema.index({ order: 1 }, { unique: true, sparse: true });
 
 module.exports = mongoose.model('QueueToken', queueTokenSchema);

@@ -1,22 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Clock, Loader2, MapPin, RefreshCw, Ticket, UsersRound } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 import { canteenAPI } from '../../api/studentApi';
 import { useAuth } from '../../context/AuthContext';
 import { apiUrl } from '../../utils/apiUrl';
 
-const queueHeaders = (token) => ({
-  'Content-Type': 'application/json',
-  Authorization: `Bearer ${token}`,
-});
-
 export default function QueueTokenPage() {
   const { token } = useAuth();
+  const location = useLocation();
   const [canteens, setCanteens] = useState([]);
   const [selectedCanteen, setSelectedCanteen] = useState('');
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState(location.state?.message || '');
 
   const selected = useMemo(
     () => canteens.find((canteen) => canteen._id === selectedCanteen),
@@ -78,26 +74,6 @@ export default function QueueTokenPage() {
     return () => clearInterval(timer);
   }, [selectedCanteen, token]);
 
-  const generateToken = async () => {
-    if (!selectedCanteen) return;
-    setSaving(true);
-    setMessage('');
-    try {
-      const res = await fetch(apiUrl('/api/queue/tokens'), {
-        method: 'POST',
-        headers: queueHeaders(token),
-        body: JSON.stringify({ canteenId: selectedCanteen }),
-      });
-      const json = await res.json();
-      setMessage(json.message || (json.success ? 'Token generated.' : 'Unable to generate token.'));
-      if (json.success) setStatus(json.data);
-    } catch {
-      setMessage('Unable to generate token.');
-    } finally {
-      setSaving(false);
-    }
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -147,14 +123,22 @@ export default function QueueTokenPage() {
               </div>
             )}
 
-            <button
-              onClick={generateToken}
-              disabled={saving || !selectedCanteen || status?.myToken}
-              className="btn-primary w-full mt-6 flex items-center justify-center gap-2"
-            >
-              {saving ? <Loader2 size={17} className="animate-spin" /> : <Ticket size={17} />}
-              {status?.myToken ? 'Token Active' : 'Generate Token'}
-            </button>
+            {status?.myToken ? (
+              <div className="mt-6 rounded-xl border border-green-100 dark:border-green-900/40 bg-green-50 dark:bg-green-900/10 p-4">
+                <p className="text-xs font-semibold text-green-600 dark:text-green-400">Token Active</p>
+                <p className="mt-1 text-2xl font-black text-green-700 dark:text-green-300">
+                  {status.myToken.tokenCode}
+                </p>
+              </div>
+            ) : (
+              <button
+                onClick={() => setMessage('Place order to generate token.')}
+                className="btn-primary w-full mt-6 flex items-center justify-center gap-2"
+              >
+                <Ticket size={17} />
+                Generate Token
+              </button>
+            )}
 
             {message && <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">{message}</p>}
           </section>
@@ -208,7 +192,7 @@ export default function QueueTokenPage() {
               ) : (
                 <div className="mt-6 py-12 text-center text-gray-400">
                   <Ticket className="w-10 h-10 mx-auto mb-3" />
-                  <p className="text-sm">Generate a token to join this queue.</p>
+                  <p className="text-sm">Place an order to receive a queue token automatically.</p>
                 </div>
               )}
             </div>

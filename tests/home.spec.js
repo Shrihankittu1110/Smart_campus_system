@@ -21,3 +21,11 @@ test('admin analytics page loads', async ({ page }) => {
   await page.goto('/admin/analytics', { waitUntil: 'domcontentloaded' });
   await expect(page.getByRole('heading', { name: /analytics/i })).toBeVisible();
 });
+
+test('queue token page requires an order', async ({ page }) => {
+  await page.goto('/student/queue', { waitUntil: 'domcontentloaded' });
+  await expect(page.getByRole('heading', { name: /queue tokens/i })).toBeVisible();
+  await expect(page.getByText(/place an order to receive a queue token automatically/i)).toBeVisible();
+  await page.getByRole('button', { name: /generate token/i }).click();
+  await expect(page.getByText(/place order to generate token/i)).toBeVisible();
+});

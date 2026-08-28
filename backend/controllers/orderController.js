@@ -2,6 +2,7 @@ const Order = require('../models/Order');
 const Cart = require('../models/Cart');
 const Payment = require('../models/Payment');
 const mongoose = require('mongoose');
+const { createTokenForOrder } = require('./queueController');
 
 // Place order from cart
 const placeOrder = async (req, res) => {
@@ -51,10 +52,16 @@ const placeOrder = async (req, res) => {
     order.paymentStatus = 'paid';
     await order.save();
 
+    const queue = await createTokenForOrder({
+      orderId: order._id,
+      studentId,
+      canteenId: order.canteen,
+    });
+
     // Clear cart after order
     await Cart.findOneAndDelete({ student: studentId });
 
-    res.status(201).json({ success: true, data: order, payment });
+    res.status(201).json({ success: true, data: order, payment, queue });
   } catch (error) {
     console.error('Place order error:', error);
     res.status(500).json({ success: false, message: error.message });

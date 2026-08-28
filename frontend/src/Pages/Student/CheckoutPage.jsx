@@ -4,7 +4,7 @@ import {
   ArrowLeft, Banknote, CreditCard, Smartphone,
   Check, Loader2, ShoppingBag, ClipboardList, X
 } from "lucide-react";
-import { cartAPI, orderAPI, paymentAPI } from "../../api/studentApi";
+import { cartAPI, orderAPI } from "../../api/studentApi";
 import { useAuth } from "../../context/AuthContext";
 
 const PAYMENT_METHODS = [
@@ -67,15 +67,12 @@ export default function CheckoutPage() {
 
       const newOrderId = orderRes.data._id;
       setOrderId(newOrderId);
-
-      const payRes = await paymentAPI.processPayment({
-        studentId,
-        orderId:       newOrderId,
-        amount:        subtotal,
-        paymentMethod,
+      navigate("/student/queue", {
+        state: {
+          orderId: newOrderId,
+          message: "Order placed. Your queue token was generated automatically.",
+        },
       });
-
-      setResult(payRes.success ? "success" : "failed");
     } catch {
       setError("Something went wrong. Please try again.");
     }
@@ -282,4 +279,3 @@ export default function CheckoutPage() {
     </div>
   );
 }
-
