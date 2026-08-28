@@ -1,4 +1,5 @@
 const express = require('express');
+const { protect, authorize } = require('../../Auth/middleware/authMiddleware');
 const {
   getDashboardStats,
   getOrdersByCanteen,
@@ -7,6 +8,9 @@ const {
 } = require('../controllers/dashboardController');
 
 const router = express.Router();
+
+router.use(protect);
+router.use(authorize('admin'));
 
 router.get('/stats',              getDashboardStats);
 router.get('/orders-by-canteen',  getOrdersByCanteen);

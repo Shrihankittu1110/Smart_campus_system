@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import {
   MessageSquare, Send, Loader2, Check, X, AlertCircle,
-  Phone, Mail, User, FileText, ArrowLeft, Upload, CreditCard
+  Phone, Mail, User, FileText, ArrowLeft, Upload, CreditCard,
+  ChevronDown
 } from "lucide-react";
 import { canteenAPI } from "../../api/studentApi";
 import { apiUrl } from "../../utils/apiUrl";
