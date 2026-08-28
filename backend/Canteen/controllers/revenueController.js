@@ -11,6 +11,13 @@ const getCanteenId = async (user) => {
   return canteen?._id || null;
 };
 
+const paidOrderFilter = (canteen, startDate, endDate) => ({
+  canteen,
+  status: { $ne: 'cancelled' },
+  paymentStatus: 'paid',
+  createdAt: { $gte: startDate, $lte: endDate },
+});
+
 // ── GET /api/canteen/revenue?year=2026&month=3 ────────────────────────────────
 const getRevenue = async (req, res) => {
   try {
@@ -23,11 +30,18 @@ const getRevenue = async (req, res) => {
     const startOfMonth = new Date(year, month - 1, 1);
     const endOfMonth   = new Date(year, month, 0, 23, 59, 59);
 
-    const completedOrders = await getOrders().find({
+    let completedOrders = await getOrders().find({
       canteen:   canteenId,            // ✅ FIXED: was canteenId: canteenId
-      status:    'completed',
+      status:    { $ne: 'cancelled' },
+      paymentStatus: 'paid',
       createdAt: { $gte: startOfMonth, $lte: endOfMonth },
     }).toArray();
+
+    if (completedOrders.length === 0) {
+      completedOrders = await getOrders()
+        .find(paidOrderFilter(canteenId.toString(), startOfMonth, endOfMonth))
+        .toArray();
+    }
 
     const totalRevenue  = completedOrders.reduce((s, o) => s + (o.totalAmount || 0), 0);
     const totalOrders   = completedOrders.length;
@@ -47,11 +61,22 @@ const getRevenue = async (req, res) => {
     const daily = Object.values(dailyMap);
 
     const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    const allYearOrders = await getOrders().find({
+    let allYearOrders = await getOrders().find({
       canteen:   canteenId,            // ✅ FIXED: was canteenId: canteenId
-      status:    'completed',
+      status:    { $ne: 'cancelled' },
+      paymentStatus: 'paid',
       createdAt: { $gte: new Date(year, 0, 1), $lte: new Date(year, 11, 31, 23, 59, 59) },
     }).toArray();
+
+    if (allYearOrders.length === 0) {
+      allYearOrders = await getOrders()
+        .find(paidOrderFilter(
+          canteenId.toString(),
+          new Date(year, 0, 1),
+          new Date(year, 11, 31, 23, 59, 59)
+        ))
+        .toArray();
+    }
 
     const monthlyMap = {};
     MONTH_NAMES.forEach((m, i) => { monthlyMap[i] = { month: m, revenue: 0, orders: 0 }; });

@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const QueueToken = require('../models/QueueToken');
 const Canteen = require('../models/Canteen');
+const User = require('../Auth/models/User');
 const getOwnedCanteen = require('../utils/getOwnedCanteen');
 
 const AVG_SERVICE_MINUTES = 5;
@@ -18,6 +19,33 @@ const endOfToday = () => {
 };
 
 const todayFilter = () => ({ $gte: startOfToday(), $lte: endOfToday() });
+
+const isCanteenAvailable = async (canteen) => {
+  if (!canteen || canteen.isActive === false) return false;
+  if (canteen.isApproved === true) return true;
+
+  const ownerFilters = [];
+  if (canteen.owner) {
+    ownerFilters.push({ _id: canteen.owner });
+    if (mongoose.Types.ObjectId.isValid(canteen.owner)) {
+      ownerFilters.push({ _id: new mongoose.Types.ObjectId(canteen.owner) });
+    }
+  }
+  if (canteen.email) ownerFilters.push({ email: canteen.email });
+  if (canteen.canteenName) ownerFilters.push({ canteenName: canteen.canteenName });
+  if (canteen.name) ownerFilters.push({ canteenName: canteen.name });
+  if (!ownerFilters.length) return false;
+
+  const owner = await User.findOne({
+    role: 'canteen',
+    status: 'approved',
+    isActive: { $ne: false },
+    isBlocked: { $ne: true },
+    $or: ownerFilters,
+  });
+
+  return Boolean(owner);
+};
 
 const buildQueueStatus = async (canteenId, studentId = null) => {
   const waitingTokens = await QueueToken.find({
@@ -72,8 +100,8 @@ const createToken = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Valid canteenId is required' });
     }
 
-    const canteen = await Canteen.findOne({ _id: canteenId, isApproved: true, isActive: true });
-    if (!canteen) {
+    const canteen = await Canteen.findById(canteenId);
+    if (!(await isCanteenAvailable(canteen))) {
       return res.status(404).json({ success: false, message: 'Canteen is not available' });
     }
 

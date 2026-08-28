@@ -15,7 +15,7 @@ const getPaymentByOrder = async (req, res) => {
 // Process mock payment - always success for demo
 const processMockPayment = async (req, res) => {
   try {
-    const { orderId, method } = req.body;
+    const { orderId, method, paymentMethod } = req.body;
 
     const payment = await Payment.findOne({ order: orderId });
     if (!payment) return res.status(404).json({ success: false, message: 'Payment not found' });
@@ -24,7 +24,7 @@ const processMockPayment = async (req, res) => {
     const isSuccess = true;
 
     payment.status = 'success';
-    payment.method = method || payment.method;
+    payment.method = method || paymentMethod || payment.method;
     await payment.save();
 
     res.status(200).json({

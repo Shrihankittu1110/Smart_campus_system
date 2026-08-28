@@ -43,7 +43,8 @@ const getDashboard = async (req, res) => {
       {
         $match: {
           canteen: canteenObjId,       // ✅ FIXED: was canteenId
-          status:    'completed',
+          status:    { $ne: 'cancelled' },
+          paymentStatus: 'paid',
           createdAt: { $gte: startOfDay, $lte: endOfDay },
         },
       },
@@ -60,7 +61,8 @@ const getDashboard = async (req, res) => {
     // ── Popular meals (from completed orders) ─────────────────────────────────
     const completedOrders = await getOrders().find({
       canteen: canteenObjId,           // ✅ FIXED: was canteenId
-      status:  'completed',
+      status:  { $ne: 'cancelled' },
+      paymentStatus: 'paid',
     }).toArray();
 
     const mealMap = {};

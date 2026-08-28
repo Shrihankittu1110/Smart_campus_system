@@ -177,7 +177,7 @@ export default function RevenuePage() {
       <div className="flex-shrink-0 px-6 py-4 bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700/60 flex items-center justify-between">
         <div>
           <h1 className="text-lg font-bold text-gray-900 dark:text-white">Revenue</h1>
-          <p className="text-xs text-gray-400">From completed orders only</p>
+          <p className="text-xs text-gray-400">From paid orders</p>
         </div>
         <div className="flex items-center gap-3">
           {/* Month selector */}
@@ -235,7 +235,7 @@ export default function RevenuePage() {
                 {
                   label: 'Total Orders',
                   value: data.summary.totalOrders,
-                  sub:   'Completed orders',
+                  sub:   'Paid orders',
                   icon:  ShoppingBag,
                   color: 'bg-blue-500',
                   bg:    'bg-blue-50 dark:bg-blue-900/10',
@@ -243,7 +243,7 @@ export default function RevenuePage() {
                 {
                   label: 'Avg Order Value',
                   value: `Rs. ${data.summary.avgOrderValue.toLocaleString()}`,
-                  sub:   'Per completed order',
+                  sub:   'Per paid order',
                   icon:  TrendingUp,
                   color: 'bg-purple-500',
                   bg:    'bg-purple-50 dark:bg-purple-900/10',
@@ -324,7 +324,7 @@ export default function RevenuePage() {
               <div className="flex items-center gap-2 mb-4">
                 <Star className="w-4 h-4 text-yellow-500" />
                 <h2 className="font-bold text-gray-800 dark:text-white">Popular Meals</h2>
-                <span className="text-xs text-gray-400 ml-1">by completed orders</span>
+                <span className="text-xs text-gray-400 ml-1">by paid orders</span>
               </div>
 
               {data.popularMeals.length === 0 ? (
