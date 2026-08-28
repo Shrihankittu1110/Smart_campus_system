@@ -124,7 +124,21 @@ const globalMealSearch = async (req, res) => {
       })
     );
 
-    res.status(200).json({ success: true, data: filtered, count: filtered.length });
+    const normalized = filtered.map((meal) => {
+      const obj = meal.toObject();
+      return {
+        ...obj,
+        price: obj.basePrice,
+        canteen: obj.canteen
+          ? {
+              ...(obj.canteen.toObject?.() || obj.canteen),
+              name: obj.canteen.canteenName || obj.canteen.name || 'Canteen',
+            }
+          : obj.canteen,
+      };
+    });
+
+    res.status(200).json({ success: true, data: normalized, count: normalized.length });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

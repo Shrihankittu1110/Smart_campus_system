@@ -43,6 +43,7 @@ export default function GlobalSearchPage() {
   const [category, setCategory] = useState("All");
   const [maxPrice, setMaxPrice] = useState("");
   const [results, setResults]   = useState([]);
+  const [allMeals, setAllMeals] = useState([]);
   const [loading, setLoading]   = useState(false);
   const [searched, setSearched] = useState(true);
   const [addedMap, setAddedMap] = useState({});
@@ -67,7 +68,9 @@ export default function GlobalSearchPage() {
     setLoading(true);
     try {
       const res = await canteenAPI.globalSearch(query, category, maxPrice);
-      setResults(res.success ? res.data : []);
+      const data = res.success ? res.data : [];
+      setResults(data);
+      if (!query && category === "All" && !maxPrice) setAllMeals(data);
     } catch {
       setResults([]);
     }
@@ -96,6 +99,9 @@ export default function GlobalSearchPage() {
 
   const selectedPriceLabel = PRICE_OPTIONS.find((o) => o.value === maxPrice)?.label || "Any Price";
   const hasActiveFilter = query || category !== "All" || maxPrice;
+  const visibleCategories = CATEGORIES.filter(
+    (cat) => cat === "All" || allMeals.some((meal) => meal.category === cat)
+  );
 
   return (
     <div className="min-h-screen px-6 py-8">
@@ -144,7 +150,7 @@ export default function GlobalSearchPage() {
           {/* Category buttons + Price dropdown */}
           <div className="flex items-center justify-between gap-3 mb-3">
             <div className="flex flex-wrap gap-2 flex-1">
-              {CATEGORIES.map((cat) => (
+              {visibleCategories.map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setCategory(cat)}
