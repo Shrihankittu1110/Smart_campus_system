@@ -98,13 +98,14 @@ export default function ReviewsPage() {
   };
 
   // Stats
+  const ratedReviews = reviews.filter((r) => r.type !== 'inquiry' && r.rating > 0);
   const total     = reviews.length;
-  const avgRating = total > 0
-    ? (reviews.reduce((s, r) => s + r.rating, 0) / total).toFixed(1)
+  const avgRating = ratedReviews.length > 0
+    ? (ratedReviews.reduce((s, r) => s + r.rating, 0) / ratedReviews.length).toFixed(1)
     : '0.0';
   const ratingCounts = [5, 4, 3, 2, 1].map(n => ({
     label: `${n} ★`,
-    count: reviews.filter(r => r.rating === n).length,
+    count: ratedReviews.filter(r => r.rating === n).length,
   }));
 
   // Filter
@@ -138,12 +139,12 @@ export default function ReviewsPage() {
             <div className="flex flex-col items-center justify-center border-r border-gray-100 dark:border-gray-700/60">
               <p className="text-6xl font-black text-gray-800 dark:text-white">{avgRating}</p>
               <StarDisplay rating={Math.round(parseFloat(avgRating))} size="lg" />
-              <p className="text-xs text-gray-400 mt-1">{total} reviews</p>
+              <p className="text-xs text-gray-400 mt-1">{ratedReviews.length} reviews</p>
             </div>
             {/* Right — bars */}
             <div className="space-y-2 justify-center flex flex-col">
               {ratingCounts.map(({ label, count }) => (
-                <RatingBar key={label} label={label} count={count} total={total} />
+                <RatingBar key={label} label={label} count={count} total={ratedReviews.length} />
               ))}
             </div>
           </div>
@@ -202,7 +203,13 @@ export default function ReviewsPage() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <StarDisplay rating={review.rating} />
+                    {review.type === 'inquiry' ? (
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-green-600 dark:text-green-400">
+                        Inquiry
+                      </span>
+                    ) : (
+                      <StarDisplay rating={review.rating} />
+                    )}
                     {review.mealName && (
                       <p className="text-[10px] text-gray-400 mt-1">for {review.mealName}</p>
                     )}
@@ -232,7 +239,7 @@ export default function ReviewsPage() {
                 )}
 
                 {/* Reply input */}
-                {replyingTo === review._id ? (
+                {review.type !== 'inquiry' && replyingTo === review._id ? (
                   <div className="space-y-2">
                     <textarea
                       value={replyText}
@@ -253,7 +260,7 @@ export default function ReviewsPage() {
                       </button>
                     </div>
                   </div>
-                ) : (
+                ) : review.type !== 'inquiry' ? (
                   <button
                     onClick={() => {
                       setReplyingTo(review._id);
@@ -263,7 +270,7 @@ export default function ReviewsPage() {
                     <MessageSquare className="w-3.5 h-3.5" />
                     {review.reply ? 'Edit Reply' : 'Reply'}
                   </button>
-                )}
+                ) : null}
               </div>
             ))}
           </div>

@@ -10,8 +10,11 @@ const complaintSchema = new mongoose.Schema(
      canteenName:      { type: String, default: '' },
     category: {
     type: String,
-      enum: ['Bug Issue', 'Performance', 'Feature Idea', 'App Bug', 'Other',
-         'Order Issue', 'Food Quality', 'Service', 'Payment'],
+      enum: [
+        'General Inquiry', 'Bug Issue', 'Performance', 'Feature Idea', 'App Bug', 'Other',
+        'Order Issue', 'Food Quality', 'Service', 'Payment', 'Payment Problem',
+        'Account Issue', 'Canteen Feedback'
+      ],
   required: true},
     description:      { type: String, required: true },
     attachment:       { type: String },

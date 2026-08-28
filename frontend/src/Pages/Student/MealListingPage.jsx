@@ -8,6 +8,7 @@ import {
 import { canteenAPI, cartAPI } from "../../api/studentApi";
 import { useAuth } from "../../context/AuthContext";
 import { buildImgUrl } from "../../utils/imageUrl";
+import { apiUrl } from "../../utils/apiUrl";
 
 const CATEGORIES = ["All", "Rice", "Breakfast", "Snacks", "Desserts", "Drinks", "Other"];
 
@@ -248,7 +249,7 @@ export default function MealListingPage() {
       if (reportContact === "Phone") formData.append("contactPhone", reportPhone);
       if (reportPhoto) formData.append("attachment", reportPhoto);
 
-      const res  = await fetch("/api/student/complaints", { method: "POST", body: formData });
+      const res  = await fetch(apiUrl("/api/student/complaints"), { method: "POST", body: formData });
       const data = await res.json();
       if (data.success) setReportSubmitted(true);
       else setReportErrors({ submit: data.message || "Failed to submit. Please try again." });

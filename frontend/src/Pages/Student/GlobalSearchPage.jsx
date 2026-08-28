@@ -44,7 +44,7 @@ export default function GlobalSearchPage() {
   const [maxPrice, setMaxPrice] = useState("");
   const [results, setResults]   = useState([]);
   const [loading, setLoading]   = useState(false);
-  const [searched, setSearched] = useState(false);
+  const [searched, setSearched] = useState(true);
   const [addedMap, setAddedMap] = useState({});
   const [toast, setToast]       = useState("");
   const debounceRef = useRef(null);
@@ -52,12 +52,6 @@ export default function GlobalSearchPage() {
   // Trigger search whenever query, category, or price changes
   useEffect(() => {
     // No filters active — reset to initial state
-    if (!query && category === "All" && !maxPrice) {
-      setResults([]);
-      setSearched(false);
-      return;
-    }
-
     // Mark as searched immediately so UI updates
     setSearched(true);
 
@@ -71,8 +65,12 @@ export default function GlobalSearchPage() {
 
   const doSearch = async () => {
     setLoading(true);
-    const res = await canteenAPI.globalSearch(query, category, maxPrice);
-    if (res.success) setResults(res.data);
+    try {
+      const res = await canteenAPI.globalSearch(query, category, maxPrice);
+      setResults(res.success ? res.data : []);
+    } catch {
+      setResults([]);
+    }
     setLoading(false);
   };
 
@@ -94,8 +92,6 @@ export default function GlobalSearchPage() {
     setQuery("");
     setCategory("All");
     setMaxPrice("");
-    setResults([]);
-    setSearched(false);
   };
 
   const selectedPriceLabel = PRICE_OPTIONS.find((o) => o.value === maxPrice)?.label || "Any Price";
@@ -278,14 +274,14 @@ export default function GlobalSearchPage() {
                   <div className="flex items-center gap-2 mt-0.5">
                     <span className="badge badge-green text-[10px]">{meal.category}</span>
                     <span className="flex items-center gap-1 text-[11px] text-gray-400">
-                      <Store size={10} /> {meal.canteen?.name}
+                      <Store size={10} /> {meal.canteen?.canteenName || meal.canteen?.name}
                     </span>
                   </div>
                   <p className="text-xs text-gray-400 mt-1 truncate">{meal.description}</p>
                 </div>
                 <div className="flex flex-col items-end gap-2 flex-shrink-0">
                   <span className="font-bold text-gray-900 dark:text-white text-sm">
-                    <span className="text-xs text-gray-400 mr-0.5">RS</span>{meal.price?.toFixed(2)}
+                    <span className="text-xs text-gray-400 mr-0.5">RS</span>{Number(meal.basePrice || meal.price || 0).toFixed(2)}
                   </span>
                   <button
                     onClick={() => handleAddToCart(meal)}

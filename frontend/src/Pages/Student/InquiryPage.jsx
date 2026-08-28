@@ -1,10 +1,12 @@
-import { useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import {
   MessageSquare, Send, Loader2, Check, X, AlertCircle,
   Phone, Mail, User, FileText, ArrowLeft, Upload, CreditCard
 } from "lucide-react";
+import { canteenAPI } from "../../api/studentApi";
+import { apiUrl } from "../../utils/apiUrl";
 
 // Inquiry types — test expects "General Inquiry", "Order Issue", "Payment Problem"
 const INQUIRY_TYPES = [
@@ -34,15 +36,28 @@ export default function InquiryPage() {
     subject:     "",
     message:     "",
     contactPref: "Email",
+    canteenId:   "",
   });
 
   const [attachment, setAttachment]       = useState(null);
+  const [canteens, setCanteens]           = useState([]);
   const [attachPreview, setAttachPreview] = useState(null);
   const [errors, setErrors]               = useState({});
   const [touched, setTouched]             = useState({});
   const [submitting, setSubmitting]       = useState(false);
   const [submitted, setSubmitted]         = useState(false);
   const [showConfirm, setShowConfirm]     = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    canteenAPI.getAll()
+      .then((res) => {
+        if (mounted && res.success) setCanteens(res.data || []);
+      })
+      .catch(() => {});
+
+    return () => { mounted = false; };
+  }, []);
 
   // ── Validation — error messages match test regex patterns ──
   const validate = (f = form) => {
@@ -135,13 +150,14 @@ export default function InquiryPage() {
       formData.append("submittedByName",  form.name);
       formData.append("submittedByEmail", form.email);
       formData.append("submitterId",      user?._id || user?.id || "");
+      if (form.canteenId) formData.append("canteenId", form.canteenId);
       formData.append("category",         form.inquiryType);
       formData.append("description",
         `[Subject: ${form.subject}] [Phone: ${form.phone}] [NIC: ${form.nic}] [Contact Pref: ${form.contactPref}]\n\n${form.message}`
       );
       if (attachment) formData.append("attachment", attachment);
 
-      const res  = await fetch("/api/student/complaints", { method: "POST", body: formData });
+      const res  = await fetch(apiUrl("/api/student/complaints"), { method: "POST", body: formData });
       const data = await res.json();
       if (data.success) setSubmitted(true);
       else setErrors({ submit: data.message || "Failed to submit. Please try again." });
@@ -153,7 +169,7 @@ export default function InquiryPage() {
 
   const resetForm = () => {
     setSubmitted(false);
-    setForm({ name: user?.name||"", email: user?.email||"", phone:"", nic:"", inquiryType:"", subject:"", message:"", contactPref:"Email" });
+    setForm({ name: user?.name||"", email: user?.email||"", phone:"", nic:"", inquiryType:"", subject:"", message:"", contactPref:"Email", canteenId:"" });
     setErrors({}); setTouched({}); setAttachment(null); setAttachPreview(null);
   };
 
@@ -340,6 +356,30 @@ export default function InquiryPage() {
               ))}
             </div>
             <ErrMsg field="inquiryType" />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+              Related Canteen <span className="text-gray-400 font-normal">(optional)</span>
+            </label>
+            <div className="relative">
+              <select
+                value={form.canteenId}
+                onChange={(e) => handleChange("canteenId", e.target.value)}
+                className="input-field w-full text-sm appearance-none pr-10"
+              >
+                <option value="">General inquiry</option>
+                {canteens.map((canteen) => (
+                  <option key={canteen._id} value={canteen._id}>
+                    {canteen.canteenName || canteen.name}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            </div>
+            <p className="text-[10px] text-gray-400 mt-1">
+              Choose a canteen if this should appear in that canteen's feedback page.
+            </p>
           </div>
 
           {/* Subject — placeholder matches /brief subject/i */}

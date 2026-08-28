@@ -7,31 +7,35 @@ const mealCanteenFilter = (canteenId) => ({
   $or: [{ canteen: canteenId }, { canteen: canteenId.toString() }],
 });
 
+const getApprovedCanteenFilters = async () => {
+  const approvedOwners = await User.find({
+    role: 'canteen',
+    status: 'approved',
+    isActive: { $ne: false },
+    isBlocked: { $ne: true },
+  }).select('_id email canteenName');
+
+  const approvedOwnerIds = approvedOwners.map((user) => user._id);
+  const approvedOwnerIdStrings = approvedOwnerIds.map((id) => id.toString());
+  const approvedEmails = approvedOwners.map((user) => user.email).filter(Boolean);
+  const approvedCanteenNames = approvedOwners.map((user) => user.canteenName).filter(Boolean);
+
+  return [
+    { isApproved: true },
+    { owner: { $in: approvedOwnerIds } },
+    { owner: { $in: approvedOwnerIdStrings } },
+    { email: { $in: approvedEmails } },
+    { canteenName: { $in: approvedCanteenNames } },
+    { name: { $in: approvedCanteenNames } },
+  ];
+};
+
 // Get all approved canteens
 const getApprovedCanteens = async (req, res) => {
   try {
-    const approvedOwners = await User.find({
-      role: 'canteen',
-      status: 'approved',
-      isActive: { $ne: false },
-      isBlocked: { $ne: true },
-    }).select('_id email canteenName');
-
-    const approvedOwnerIds = approvedOwners.map((user) => user._id);
-    const approvedOwnerIdStrings = approvedOwnerIds.map((id) => id.toString());
-    const approvedEmails = approvedOwners.map((user) => user.email).filter(Boolean);
-    const approvedCanteenNames = approvedOwners.map((user) => user.canteenName).filter(Boolean);
-
     const canteens = await Canteen.find({
       isActive: { $ne: false },
-      $or: [
-        { isApproved: true },
-        { owner: { $in: approvedOwnerIds } },
-        { owner: { $in: approvedOwnerIdStrings } },
-        { email: { $in: approvedEmails } },
-        { canteenName: { $in: approvedCanteenNames } },
-        { name: { $in: approvedCanteenNames } },
-      ],
+      $or: await getApprovedCanteenFilters(),
     }).sort({ canteenName: 1 });
 
     const normalized = await Promise.all(canteens.map(async (c) => {
@@ -108,10 +112,16 @@ const globalMealSearch = async (req, res) => {
     // ✅ Fix: use basePrice instead of price
     if (maxPrice) filter.basePrice = { $lte: Number(maxPrice) };
 
-    const meals = await Meal.find(filter).populate('canteen', 'canteenName name location image isActive isApproved');
+    const meals = await Meal.find(filter).populate('canteen', 'canteenName name location image isActive isApproved owner email');
+    const approvedCanteenFilters = await getApprovedCanteenFilters();
 
     const filtered = meals.filter(
-      (m) => m.canteen && m.canteen.isActive && m.canteen.isApproved
+      (m) => m.canteen && m.canteen.isActive !== false && approvedCanteenFilters.some((approvedFilter) => {
+        if (approvedFilter.isApproved) return m.canteen.isApproved === true;
+        const [[field, condition]] = Object.entries(approvedFilter);
+        const value = m.canteen[field]?.toString();
+        return condition.$in?.some((item) => item?.toString() === value);
+      })
     );
 
     res.status(200).json({ success: true, data: filtered, count: filtered.length });
