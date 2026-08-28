@@ -2,6 +2,12 @@ const mongoose = require('mongoose');
 const User    = require('../../Auth/models/User');
 const Canteen = require('../../models/Canteen');
 const { logActivity } = require('./dashboardController');
+const {
+  buildComplaintCanteenFilter,
+  buildOrderCanteenFilter,
+  buildRelatedDocFilter,
+  ensureApprovedCanteenDocuments,
+} = require('../utils/canteenAdminData');
 
 const getCollection = (name) => mongoose.connection.db.collection(name);
 const mealCanteenFilter = (canteenId) => ({
@@ -11,6 +17,7 @@ const mealCanteenFilter = (canteenId) => ({
 // ── GET /api/admin/canteens/stats ─────────────────────────────────────────────
 const getCanteenStats = async (req, res) => {
   try {
+    await ensureApprovedCanteenDocuments();
     const [approved, pending, rejected] = await Promise.all([
       getCollection('canteens').countDocuments({ isApproved: true }),
       User.countDocuments({ role: 'canteen', status: 'pending' }),
@@ -25,6 +32,7 @@ const getCanteenStats = async (req, res) => {
 // ── GET /api/admin/canteens/visibility-stats ──────────────────────────────────
 const getVisibilityStats = async (req, res) => {
   try {
+    await ensureApprovedCanteenDocuments();
     const [operating, visible, hidden] = await Promise.all([
       getCollection('canteens').countDocuments({ isApproved: true }),
       getCollection('canteens').countDocuments({ isApproved: true, isActive: true }),
@@ -69,6 +77,10 @@ const getCanteens = async (req, res) => {
     let filter = {};
     if (status === 'approved') filter = { isApproved: true };
 
+    if (status === 'approved' || status === 'all') {
+      await ensureApprovedCanteenDocuments();
+    }
+
     const canteens = await getCollection('canteens')
       .find(filter)
       .sort({ createdAt: -1 })
@@ -85,14 +97,14 @@ const getCanteens = async (req, res) => {
 
       const [orderCount, complaintCount, ratingAgg, ownerUser, mealCount, availableMealCount] = await Promise.all([
         // ✅ cast to ObjectId explicitly
-        getCollection('orders').countDocuments({ canteen: canteenObjId }),
+        getCollection('orders').countDocuments(buildOrderCanteenFilter(c)),
 
         // ✅ count complaints by canteenId
-        getCollection('complaints').countDocuments({ canteenId: canteenObjId }),
+        getCollection('complaints').countDocuments(buildComplaintCanteenFilter(c)),
 
         // ratings — aggregate avg and count
         getCollection('ratings').aggregate([
-          { $match: { canteen: canteenObjId } },
+          { $match: buildRelatedDocFilter(c) },
           { $group: {
               _id:           null,
               averageRating: { $avg: '$rating' },
@@ -138,10 +150,7 @@ const getCanteens = async (req, res) => {
 // ── GET /api/admin/canteens/approved-list ─────────────────────────────────────
 const getApprovedCanteens = async (req, res) => {
   try {
-    const canteens = await getCollection('canteens')
-      .find({ isApproved: true })
-      .sort({ canteenName: 1 })
-      .toArray();
+    const canteens = await ensureApprovedCanteenDocuments();
 
     const enriched = await Promise.all(canteens.map(async (c) => {
       // Ensure proper ObjectId types for queries
@@ -156,14 +165,14 @@ const getApprovedCanteens = async (req, res) => {
       const [orderCount, complaintCount, ratingAgg, ownerUser, mealCount, availableMealCount] = await Promise.all([
 
         // ✅ Fix 1: cast to ObjectId explicitly
-        getCollection('orders').countDocuments({ canteen: canteenObjId }),
+        getCollection('orders').countDocuments(buildOrderCanteenFilter(c)),
 
         // ✅ Fix 2: count complaints where canteenId matches this canteen
-        getCollection('complaints').countDocuments({ canteenId: canteenObjId }),
+        getCollection('complaints').countDocuments(buildComplaintCanteenFilter(c)),
 
         // ✅ Fix 3: ratings were never fetched — aggregate avg + count
         getCollection('ratings').aggregate([
-          { $match: { canteen: canteenObjId } },
+          { $match: buildRelatedDocFilter(c) },
           { $group: {
               _id:           null,
               averageRating: { $avg: '$rating' },
